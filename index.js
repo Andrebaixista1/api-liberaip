@@ -8,12 +8,13 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Ajuste o origin de acordo com os domínios que precisam acessar sua API
+// Ajuste os domínios abaixo de acordo com o seu front-end (localhost ou vercel)
 app.use(
   cors({
     origin: [
       'http://localhost:3000',
-      'https://seu-front.vercel.app'
+      'https://libera-ip.vercel.app',
+      'https://api-liberaip.vercel.app'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'apiKey', 'x-client-ip']
@@ -54,31 +55,34 @@ app.post('/api/ipdata', (req, res) => {
     INSERT INTO ip_data (ip, descricao, data_vencimento, limite_consultas, data_adicao, total_carregado)
     VALUES (?, ?, ?, ?, ?, ?)
   `;
-  connection.query(sql, [ip, descricao, data_vencimento, limite_consultas, data_adicao, total_carregado], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: err.message });
-    }
-    const insertedId = result.insertId;
-    connection.query('SELECT * FROM ip_data WHERE id = ?', [insertedId], (err2, results2) => {
-      if (err2) {
-        console.error(err2);
-        return res.status(500).json({ error: err2.message });
+  connection.query(
+    sql,
+    [ip, descricao, data_vencimento, limite_consultas, data_adicao, total_carregado],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: err.message });
       }
-      res.json(results2[0]);
-    });
-  });
+      const insertedId = result.insertId;
+      connection.query('SELECT * FROM ip_data WHERE id = ?', [insertedId], (err2, results2) => {
+        if (err2) {
+          console.error(err2);
+          return res.status(500).json({ error: err2.message });
+        }
+        res.json(results2[0]);
+      });
+    }
+  );
 });
 
-// Exemplo de rota simples para testar se a API está no ar
 app.get('/ping', (req, res) => {
   res.json({ message: 'pong' });
 });
 
-// Exporte o app se for usar no Vercel com vercel.json
+// Se estiver rodando no Vercel, exporte o app
 module.exports = app;
 
-// Se for rodar localmente, inicie o servidor
+// Se quiser rodar localmente, inicie o servidor
 if (!process.env.VERCEL) {
   app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
