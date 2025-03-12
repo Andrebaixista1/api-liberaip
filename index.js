@@ -1,3 +1,4 @@
+// index.js
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
@@ -7,7 +8,18 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors());
+// Ajuste o origin de acordo com os domínios que precisam acessar sua API
+app.use(
+  cors({
+    origin: [
+      'http://localhost:3000',
+      'https://seu-front.vercel.app'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'apiKey', 'x-client-ip']
+  })
+);
+
 app.use(express.json());
 
 const connection = mysql.createConnection({
@@ -26,9 +38,6 @@ connection.connect(err => {
   console.log('Conectado ao MySQL!');
 });
 
-// Inclua o IP local (127.0.0.1) ou "::1" se estiver testando localmente
-const allowedIps = ['201.0.21.143', '45.224.161.116', '127.0.0.1', '::1'];
-
 app.get('/api/ipdata', (req, res) => {
   connection.query('SELECT * FROM ip_data', (err, results) => {
     if (err) {
@@ -40,13 +49,6 @@ app.get('/api/ipdata', (req, res) => {
 });
 
 app.post('/api/ipdata', (req, res) => {
-  let clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || '';
-  clientIp = clientIp.replace(/^::ffff:/, '');
-
-  if (!allowedIps.includes(clientIp)) {
-    return res.status(403).json({ error: 'IP não autorizado' });
-  }
-
   const { ip, descricao, data_vencimento, limite_consultas, data_adicao, total_carregado } = req.body;
   const sql = `
     INSERT INTO ip_data (ip, descricao, data_vencimento, limite_consultas, data_adicao, total_carregado)
@@ -68,6 +70,17 @@ app.post('/api/ipdata', (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+// Exemplo de rota simples para testar se a API está no ar
+app.get('/ping', (req, res) => {
+  res.json({ message: 'pong' });
 });
+
+// Exporte o app se for usar no Vercel com vercel.json
+module.exports = app;
+
+// Se for rodar localmente, inicie o servidor
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`Servidor rodando na porta ${port}`);
+  });
+}
