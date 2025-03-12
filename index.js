@@ -14,7 +14,9 @@ app.use(
     origin: [
       'http://localhost:3000',
       'https://libera-ip.vercel.app',
-      'https://api-liberaip.vercel.app'
+      'https://api-liberaip.vercel.app',
+      'http://localhost:20251',
+      'https://consulta-in100-vi.vercel.app/',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'apiKey', 'x-client-ip']
