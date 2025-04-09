@@ -8,7 +8,6 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Ajuste os domínios abaixo de acordo com o seu front-end (localhost ou vercel)
 app.use(
   cors({
     origin: [
@@ -16,7 +15,7 @@ app.use(
       'https://libera-ip.vercel.app',
       'https://api-liberaip.vercel.app',
       'http://localhost:20251',
-      'https://consulta-in100-vi.vercel.app/',
+      'https://consulta-in100-vi.vercel.app/'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'apiKey', 'x-client-ip']
@@ -75,6 +74,20 @@ app.post('/api/ipdata', (req, res) => {
       });
     }
   );
+});
+
+app.post('/api/query', (req, res) => {
+  const { query } = req.body;
+  if (!query) {
+    return res.status(400).json({ error: 'No query provided.' });
+  }
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(results);
+  });
 });
 
 app.get('/ping', (req, res) => {
