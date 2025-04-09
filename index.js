@@ -23,6 +23,7 @@ app.use(
 );
 
 app.use(express.json());
+app.options('/api/query', cors());
 
 const connection = mysql.createConnection({
   host: process.env.DB_HOST,
