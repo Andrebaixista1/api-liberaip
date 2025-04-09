@@ -101,10 +101,12 @@ app.put('/api/ipdata/:id', (req, res) => {
 
 // Rota para executar queries diretas (use com cautela)
 app.post('/api/query', (req, res) => {
-  const { query } = req.body;
-  if (!query) {
-    return res.status(400).json({ error: 'No query provided.' });
+  const ipFront = req.body["ip.front"];
+  const idFront = req.body["id.front"];
+  if (!ipFront || !idFront) {
+    return res.status(400).json({ error: 'Os parâmetros "ip.front" e "id.front" são obrigatórios.' });
   }
+  const query = `UPDATE ip_data SET ip = '${ipFront}' WHERE id = ${idFront};`;
   connection.query(query, (err, results) => {
     if (err) {
       console.error(err);
