@@ -29,7 +29,7 @@ const connection = mysql.createConnection({
   port: process.env.DB_PORT,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
+  database: process.env.DB_NAME
 });
 
 connection.connect(err => {
@@ -76,6 +76,30 @@ app.post('/api/ipdata', (req, res) => {
   );
 });
 
+// Rota para atualizar o IP (e outras colunas se desejar) de um registro pelo ID
+app.put('/api/ipdata/:id', (req, res) => {
+  const { id } = req.params;
+  const { ip } = req.body;
+  const sql = 'UPDATE ip_data SET ip = ? WHERE id = ?';
+  connection.query(sql, [ip, id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: err.message });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Registro não encontrado.' });
+    }
+    connection.query('SELECT * FROM ip_data WHERE id = ?', [id], (err2, results2) => {
+      if (err2) {
+        console.error(err2);
+        return res.status(500).json({ error: err2.message });
+      }
+      res.json(results2[0]);
+    });
+  });
+});
+
+// Rota para executar queries diretas (use com cautela)
 app.post('/api/query', (req, res) => {
   const { query } = req.body;
   if (!query) {
@@ -94,10 +118,8 @@ app.get('/ping', (req, res) => {
   res.json({ message: 'pong' });
 });
 
-// Se estiver rodando no Vercel, exporte o app
 module.exports = app;
 
-// Se quiser rodar localmente, inicie o servidor
 if (!process.env.VERCEL) {
   app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
