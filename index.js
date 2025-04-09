@@ -23,7 +23,7 @@ app.use(
 );
 
 app.use(express.json());
-app.options('/api/query', cors());
+// app.options('/api/query', cors());
 
 const connection = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -100,22 +100,32 @@ app.put('/api/ipdata/:id', (req, res) => {
   });
 });
 
-// Rota para executar queries diretas (use com cautela)
-app.post('/api/query', (req, res) => {
-  const ipFront = req.body["ip.front"];
-  const idFront = req.body["id.front"];
-  if (!ipFront || !idFront) {
-    return res.status(400).json({ error: 'Os parâmetros "ip.front" e "id.front" são obrigatórios.' });
+
+// Rota CORRETA e segura para alterar IP por ID
+app.post('/api/update-ip', (req, res) => {
+  const { id, ip } = req.body;
+
+  if (!id || !ip) {
+    return res.status(400).json({ error: 'Campos "id" e "ip" são obrigatórios.' });
   }
-  const query = `UPDATE ip_data SET ip = '${ipFront}' WHERE id = ${idFront};`;
-  connection.query(query, (err, results) => {
+
+  const sql = 'UPDATE ip_data SET ip = ? WHERE id = ?';
+
+  connection.query(sql, [ip, id], (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ error: err.message });
     }
-    res.json(results);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Registro não encontrado.' });
+    }
+
+    res.json({ success: true, message: 'IP atualizado com sucesso!' });
   });
 });
+
+
 
 app.get('/ping', (req, res) => {
   res.json({ message: 'pong' });
